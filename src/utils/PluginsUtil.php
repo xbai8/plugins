@@ -124,11 +124,6 @@ class PluginsUtil
             $this->app->loadEvent(include $configPath . '/event.php');
         }
 
-        // 加载中间件文件
-        if (is_file($configPath . '/middleware.php')) {
-            $this->app->middleware->import(include $configPath . '/middleware.php', 'app');
-        }
-
         // 加载容器文件
         if (is_file($configPath . '/provider.php')) {
             $this->app->bind(include $configPath . '/provider.php');
@@ -200,8 +195,10 @@ class PluginsUtil
         if (empty($data)) {
             return;
         }
+        echo 'ok';
         // 视图路径
-        $viewPath = str_replace('\\', '/', base_path('/view'));
-        print_r();
+        $viewPath = str_replace('\\', '/', root_path('view'));
+        print_r($viewPath);
+        exit;
     }
 }
