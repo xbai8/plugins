@@ -15,6 +15,6 @@ class Request extends \think\Request
      */
     public function path()
     {
-        return 'okok';
+        return $this->pathinfo();
     }
 }

@@ -2,5 +2,5 @@
 
 return [
     // 中间件
-    'middleware'            => []
+    'middleware'            => [],
 ];

@@ -30,11 +30,22 @@ class Service extends BaseService
 
         // 监听服务
         $this->app->event->listen('HttpRun', function () use ($route) {
-            // 注册插件命名空间
-            $execute = "\\Xbai\\Plugins\\service\\Route@execute";
-            $route->rule('app/:plugin', $execute)->middleware(PluginMiddleware::class);
+            $route->rule('app/:plugin', function ($plugin) {
+                $namespace = "{$this->app->getNamespace()}\\{$this->app->request->controller()}";
+                $class = new $namespace($this->app);
+                // 执行转发
+                return call_user_func_array([
+                    $class, $this->app->request->action()
+                ], [
+                    $this->app->request
+                ]);
+            })->middleware(PluginMiddleware::class);
+
+            // $this->app->middleware->add(PluginMiddleware::class);
+
+            // 注册基础路由
+            // $route->rule('app/:plugin', "\\Xbai\\Plugins\\service\\Route@execute")
+            // ->middleware(PluginMiddleware::class);
         });
-        
-        // 注册指令
     }
 }

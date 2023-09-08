@@ -7,22 +7,23 @@ if (!function_exists('getPluginName')) {
     /**
      * 获取当前请求的插件名称
      * @return string|null
-     * @author John
+     * @author 贵州猿创科技有限公司
+     * @copyright 贵州猿创科技有限公司
+     * @email 416716328@qq.com
      */
     function getPluginName()
     {
-        $app = app();
-        $request = $app->request;
+        $request  = request();
         $pathInfo = $request->pathinfo();
         // 检测字符串中是否带有app/字符串
         if (strpos($pathInfo, 'app/') === false) {
-            return null;
+            return '';
         }
         $response = explode('/',$pathInfo);
         if (count($response) < 2) {
-            return null;
+            return '';
         }
-        return isset($response[1]) ? $response[1] : null;
+        return isset($response[1]) ? $response[1] : '';
     }
 }
 if (!function_exists('getPluginConfig')) {
