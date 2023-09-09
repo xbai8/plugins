@@ -31,6 +31,7 @@ class PluginsUtil
     public function __construct(App $app)
     {
         $this->app    = $app;
+        $this->request = $this->app->request;
         $this->plugin = getPluginName();
     }
 
@@ -43,21 +44,34 @@ class PluginsUtil
      */
     public function initPlugin()
     {
-        $request = $this->app->request;
+        // 获取实例
+        $app = $this->app;
+        // 获取请求对象
+        $request = $app->request;
+        // 获取插件名称
+        $plugin = $request->route('plugin', '');
+        $control = $request->route('control', '');
+        $action = $request->route('action', '');
+
         // 设置插件名称
-        $request->plugin = $this->plugin;
+        $request->plugin = $plugin;
         // 设置插件目录
-        $request->pluginPath = $this->app->getRootPath() . "plugin/{$this->plugin}/";
+        $request->pluginPath = $this->app->getRootPath() . "plugin/{$plugin}/";
         // 设置插件应用目录
         $request->pluginAppPath = $request->pluginPath . "app/";
         // 设置插件模板目录
         $request->pluginViewPath = $request->pluginPath . "view/";
         // 设置插件配置文件目录
         $request->pluginConfigPath = $request->pluginPath . "config/";
-        // 设置插件语言包目录
-        $request->pluginLangPath = $request->pluginPath . "lang/";
         // 设置插件静态资源目录
         $request->pluginPublicPath = $request->pluginPath . "public/";
+        // 设置插件路由信息
+        if ($control) {
+            $request->setController($control);
+        }
+        if ($action) {
+            $request->setAction($action);
+        }
     }
 
     /**
@@ -70,15 +84,15 @@ class PluginsUtil
     public function loadConfig()
     {
         // 请求对象
-        $request = $this->app->request;
+        $request        = $this->app->request;
         // 插件名称
-        $plugin = $request->plugin;
+        $plugin         = $request->plugin;
         // 插件目录
-        $pluginPath = $request->pluginPath;
+        $pluginPath     = $request->pluginPath;
         // 插件应用目录
-        $appPath = $request->pluginAppPath;
+        $appPath        = $request->pluginAppPath;
         // 插件配置目录
-        $configPath = $request->pluginConfigPath;
+        $configPath     = $request->pluginConfigPath;
 
         // 加载兼容函数库文件
         if (is_file($pluginPath . '/functions.php')) {
@@ -149,56 +163,5 @@ class PluginsUtil
         }
         // 加载插件内composer包
         $pluginLoader = include_once $packageFile;
-        // $data         = $pluginLoader->getPrefixesPsr4();
-        // if (empty($data)) {
-        //     return;
-        // }
-        // 拼接命名空间:plugin\{$pluginName}\{$name}
-        // $loader     = $this->app->rootLoader;
-        // $paths = [];
-        // foreach ($data as $name => $value) {
-        //     foreach ($value as $path) {
-        //         $loader->setPsr4("plugin\\{$this->plugin}\\package\\{$name}", $path);
-        //     }
-        // }
-    }
-
-    /**
-     * 加载插件后台
-     * @return void
-     * @author 贵州猿创科技有限公司
-     * @copyright 贵州猿创科技有限公司
-     * @email 416716328@qq.com
-     */
-    public function loadAdmin()
-    {
-        $data = config("plugin.{$this->plugin}.admin",[]);
-        if (empty($data)) {
-            return;
-        }
-        foreach ($data as $key => $value) {
-            $adminName  = $value ? "/{$value}" : '';
-            $data[$key] = "app/{$this->plugin}{$adminName}";
-        }
-        $this->registerAdmin($data);
-    }
-
-    /**
-     * 注册后台视图路由
-     * @return void
-     * @author 贵州猿创科技有限公司
-     * @copyright 贵州猿创科技有限公司
-     * @email 416716328@qq.com
-     */
-    private function registerAdmin(array $data)
-    {
-        if (empty($data)) {
-            return;
-        }
-        echo 'ok';
-        // 视图路径
-        $viewPath = str_replace('\\', '/', root_path('view'));
-        print_r($viewPath);
-        exit;
     }
 }
