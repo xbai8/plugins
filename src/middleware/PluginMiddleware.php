@@ -58,8 +58,8 @@ class PluginMiddleware
         $this->pluginUtil->initPlugin();
         // 1.使用composer注册插件命名空间
         $this->registerNamespace();
-        // 2.注册插件全局中间件
-        $this->registerGlobalMiddleware();
+        // 2.注册插件中间件
+        $this->registerMiddlewares();
 
         // 调度转发
         return $this->app->middleware
@@ -95,22 +95,34 @@ class PluginMiddleware
     }
 
     /**
-     * 注册插件全局中间件
+     * 注册插件中间件
      * @return void
      * @author 贵州猿创科技有限公司
      * @copyright 贵州猿创科技有限公司
      * @email 416716328@qq.com
      */
-    private function registerGlobalMiddleware()
+    private function registerMiddlewares()
     {
         $request = $this->app->request;
-        // 获取框架中间件
+        // 获取框架全局中间件
         $middleware = config('plugins.middleware', []);
-        // 获取插件配置中间件
+        // 获取插件全局中间件
         $pluginMiddleware = config("plugin.{$request->plugin}.middleware", []);
-        // 注册配置中间件
+        // 合并中间件
         $middlewares = array_merge($middleware, $pluginMiddleware);
+        // 注册应用级中间件
+        $plugin = $this->app->request->route('plugin','');
+        $module = $this->app->request->route('module',config('app.default_app','index'));
+        $pluginMiddlewarePath = $this->app->getRootPath()."plugin/{$plugin}/app/{$module}/middleware";
+        if (is_dir($pluginMiddlewarePath)) {
+            // 扫描php文件
+            $data = glob("{$pluginMiddlewarePath}/*.php");
+            foreach ($data as $file) {
+                $class = str_replace('.php', '', basename($file));
+                $middlewares[] = "plugin\\{$plugin}\\app\\{$module}\\middleware\\{$class}";
+            }
+        }
         // 注册插件全局中间件
-        $this->app->middleware->import($middlewares, 'plugins');
+        $this->app->middleware->import($middlewares,'plugin');
     }
 }
