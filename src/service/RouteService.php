@@ -56,6 +56,11 @@ class RouteService
         $controlLayout = config('route.controller_layer','controller');
         $control = $control ?: config('route.default_controller','Index');
         $action = $action ?: config('route.default_action','index');
+        
+        // 挂载名称
+        $this->request->moduleName = $module;
+        $this->request->controlName = $control;
+        $this->request->actionName = $action;
 
         // 组装命名空间
         $pluginNameSpace = "plugin\\{$plugin}";
