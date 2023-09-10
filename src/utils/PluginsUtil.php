@@ -50,8 +50,6 @@ class PluginsUtil
         $request = $app->request;
         // 获取插件名称
         $plugin = $request->route('plugin', '');
-        $control = $request->route('control', '');
-        $action = $request->route('action', '');
 
         // 设置插件名称
         $request->plugin = $plugin;
@@ -65,13 +63,6 @@ class PluginsUtil
         $request->pluginConfigPath = $request->pluginPath . "config/";
         // 设置插件静态资源目录
         $request->pluginPublicPath = $request->pluginPath . "public/";
-        // 设置插件路由信息
-        if ($control) {
-            $request->setController($control);
-        }
-        if ($action) {
-            $request->setAction($action);
-        }
     }
 
     /**
