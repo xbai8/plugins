@@ -84,41 +84,55 @@ class PluginMiddleware
      */
     private function parseRoute()
     {
+        $plugin   = $this->app->request->route('plugin', '');
         $pathinfo = $this->app->request->pathinfo();
+        // 静态资源则拦截
         if (pathinfo($pathinfo, PATHINFO_EXTENSION)) {
             return;
         }
-        $pathinfo = str_replace('app/', '', $pathinfo);
-        $pathinfo = trim($pathinfo, '/');
-        $pathArr = explode('/', $pathinfo);
-        $pathCount = count($pathArr);
-        $plugin = $pathArr[0] ?? '';
         if (empty($plugin)) {
             throw new \Exception("插件名称不能为空");
         }
+        // 设置插件名称
         $this->app->request->plugin = $plugin;
+        // 解析路由
+        $pathinfo  = str_replace("app/{$plugin}", '', $pathinfo);
+        $routeinfo = trim($pathinfo, '/');
+        $pathArr   = explode('/', $routeinfo);
+        $pathCount = count($pathArr);
         // 取控制器
-        $control = config('route.default_controller','Index');
+        $control = config('route.default_controller', 'Index');
         // 取方法名
-        $action = config('route.default_action','index');
-        if ($pathCount > 1) {
+        $action = config('route.default_action', 'index');
+        if ($pathCount > 1 && !is_dir($this->app->getRootPath() . "plugin/{$plugin}/app/" . $routeinfo)) {
             // 控制器
             $controlIndex = $pathCount - 2;
-            $control = ucfirst($pathArr[$controlIndex]);
+            $control      = ucfirst($pathArr[$controlIndex]);
+            unset($pathArr[$pathCount - 2]);
+        }
+        if ($pathCount > 1) {
             // 方法
             $acionIndex = $pathCount - 1;
             $action     = $pathArr[$acionIndex];
+            unset($pathArr[$pathCount - 1]);
         }
-        $isControlSuffix    = config('route.controller_suffix',true);
-        $controllerSuffix   = $isControlSuffix ? 'Controller' : '';
+        $isControlSuffix             = config('route.controller_suffix', true);
+        $controllerSuffix            = $isControlSuffix ? 'Controller' : '';
         $this->app->request->control = "{$control}{$controllerSuffix}";
-        $this->app->request->action = $action;
-        
+        $this->app->request->action  = $action;
+        $this->app->request->setController($control);
+        $this->app->request->setAction($action);
+
         // 层级
-        unset($pathArr[0]);
-        unset($pathArr[$pathCount - 1]);
-        unset($pathArr[$pathCount - 2]);
         $this->app->request->levelRoute = implode('/', $pathArr);
+        // 命名空间
+        $levelRoute = '';
+        if ($this->app->request->levelRoute) {
+            $levelRoute = str_replace("/", "\\", $this->app->request->levelRoute);
+            $levelRoute = "{$levelRoute}\\";
+        }
+        $controlLayout = config('route.controller_layer', 'controller');
+        $this->app->setNamespace("plugin\\{$plugin}\\app\\{$levelRoute}{$controlLayout}");
     }
 
     /**
@@ -157,23 +171,13 @@ class PluginMiddleware
         $request = $this->app->request;
         // 获取框架全局中间件
         $middleware = config('plugins.middleware', []);
-        // 获取插件全局中间件
-        $pluginMiddleware = config("plugin.{$request->plugin}.middleware", []);
+        // 获取层级中间件
+        $levelMiddleware = $this->app->request->levelRoute;
+        // 获取插件应用中间件
+        $pluginMiddleware = config("plugin.{$request->plugin}.middleware.{$levelMiddleware}", []);
         // 合并中间件
         $middlewares = array_merge($middleware, $pluginMiddleware);
-        // 注册应用级中间件
-        $plugin = $this->app->request->route('plugin','');
-        $module = $this->app->request->route('module',config('app.default_app','index'));
-        $pluginMiddlewarePath = $this->app->getRootPath()."plugin/{$plugin}/app/{$module}/middleware";
-        if (is_dir($pluginMiddlewarePath)) {
-            // 扫描php文件
-            $data = glob("{$pluginMiddlewarePath}/*.php");
-            foreach ($data as $file) {
-                $class = str_replace('.php', '', basename($file));
-                $middlewares[] = "plugin\\{$plugin}\\app\\{$module}\\middleware\\{$class}";
-            }
-        }
         // 注册插件全局中间件
-        $this->app->middleware->import($middlewares,'plugin');
+        $this->app->middleware->import($middlewares, 'plugin');
     }
 }
