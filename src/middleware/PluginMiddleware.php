@@ -56,9 +56,13 @@ class PluginMiddleware
         $this->pluginUtil = $pluginUtil;
         // 1.初始化应用插件基础参数
         $this->pluginUtil->initPlugin();
-        // 1.使用composer注册插件命名空间
+        // 2.解析路由
+        $this->parseRoute();
+        // 3.使用composer注册插件命名空间
         $this->registerNamespace();
-        // 2.注册插件中间件
+        // 4.加载插件配置
+        $this->pluginUtil->loadConfig();
+        // 5.注册插件中间件
         $this->registerMiddlewares();
 
         // 调度转发
@@ -68,6 +72,53 @@ class PluginMiddleware
             ->then(function ($request) use ($next) {
                 return $next($request);
             });
+    }
+
+    /**
+     * 解析路由
+     * @throws \Exception
+     * @return void
+     * @author 贵州猿创科技有限公司
+     * @copyright 贵州猿创科技有限公司
+     * @email 416716328@qq.com
+     */
+    private function parseRoute()
+    {
+        $pathinfo = $this->app->request->pathinfo();
+        if (pathinfo($pathinfo, PATHINFO_EXTENSION)) {
+            return;
+        }
+        $pathinfo = str_replace('app/', '', $pathinfo);
+        $pathinfo = trim($pathinfo, '/');
+        $pathArr = explode('/', $pathinfo);
+        $pathCount = count($pathArr);
+        $plugin = $pathArr[0] ?? '';
+        if (empty($plugin)) {
+            throw new \Exception("插件名称不能为空");
+        }
+        $this->app->request->plugin = $plugin;
+        // 取控制器
+        $control = config('route.default_controller','Index');
+        // 取方法名
+        $action = config('route.default_action','index');
+        if ($pathCount > 1) {
+            // 控制器
+            $controlIndex = $pathCount - 2;
+            $control = ucfirst($pathArr[$controlIndex]);
+            // 方法
+            $acionIndex = $pathCount - 1;
+            $action     = $pathArr[$acionIndex];
+        }
+        $isControlSuffix    = config('route.controller_suffix',true);
+        $controllerSuffix   = $isControlSuffix ? 'Controller' : '';
+        $this->app->request->control = "{$control}{$controllerSuffix}";
+        $this->app->request->action = $action;
+        
+        // 层级
+        unset($pathArr[0]);
+        unset($pathArr[$pathCount - 1]);
+        unset($pathArr[$pathCount - 2]);
+        $this->app->request->levelRoute = implode('/', $pathArr);
     }
 
     /**

@@ -33,7 +33,7 @@ class Service extends BaseService
         $this->app->event->listen('HttpRun', function () use ($route) {
             // 注册插件路由
             $execute = '\\Xbai\\Plugins\\service\\RouteService@execute';
-            $route->rule("app/:plugin/[:module]/[:control]/[:action]", $execute)
+            $route->rule("app/:plugin", $execute)
             ->middleware(PluginMiddleware::class);
         });
     }

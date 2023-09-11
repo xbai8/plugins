@@ -41,35 +41,37 @@ class RouteService
     /**
      * 路由注册
      * @param mixed $plugin
-     * @param mixed $module
-     * @param mixed $control
-     * @param mixed $action
      * @return mixed
      * @author 贵州猿创科技有限公司
      * @copyright 贵州猿创科技有限公司
      * @email 416716328@qq.com
      */
-    public function execute($plugin,$module = null,$control = null,$action = null)
+    public function execute($plugin)
     {
         // 获取三层数据
-        $module = $module ?: config('app.default_app','index');
-        $controlLayout = config('route.controller_layer','controller');
-        $control = $control ?: config('route.default_controller','Index');
-        $action = $action ?: config('route.default_action','index');
-        
-        // 挂载名称
-        $this->request->moduleName = $module;
-        $this->request->controlName = $control;
-        $this->request->actionName = $action;
+        $control = $this->request->control;
+        $action = $this->request->action;
 
         // 组装命名空间
         $pluginNameSpace = "plugin\\{$plugin}";
         $this->app->setNamespace($pluginNameSpace);
 
+        // 层级路由
+        $levelRoute = '';
+        if ($this->request->levelRoute) {
+            $levelRoute = str_replace("/","\\",$this->request->levelRoute);
+            $levelRoute = "{$levelRoute}\\";
+        }
+
         // 组装控制器命名空间
-        $isControlSuffix    = config('route.controller_suffix',true);
-        $controllerSuffix   = $isControlSuffix ? 'Controller' : '';
-        $class = "{$pluginNameSpace}\\app\\{$module}\\{$controlLayout}\\{$control}{$controllerSuffix}";
+        $controlLayout = config('route.controller_layer','controller');
+        $class = "{$pluginNameSpace}\\app\\{$levelRoute}{$controlLayout}\\{$control}";
+        if (!class_exists($class)) {
+            throw new \Exception("插件控制器不存在：{$class}");
+        }
+        if (!method_exists($class,$action)) {
+            throw new \Exception("插件方法不存在：{$class}@{$action}");
+        }
 
         // 获取实例类
         $instance   = new $class($this->app);
