@@ -34,7 +34,7 @@ class RouteService
      */
     public function __construct()
     {
-        $this->app = app();
+        $this->app     = app();
         $this->request = $this->app->request;
     }
 
@@ -48,37 +48,45 @@ class RouteService
      */
     public function execute($plugin)
     {
+        // 静态资源则拦截
+        $static_suffix = config('plugins.static_suffix');
+        if (!is_array($static_suffix)) {
+            throw new \Exception("配置项plugins.static_suffix必须为数组");
+        }
+        $extendsion = pathinfo($this->request->pathinfo(), PATHINFO_EXTENSION);
+        if (in_array($extendsion, $static_suffix)) {
+            // 执行调度转发
+            return app($class)->$action($this->request);
+        }
         // 获取三层数据
         $control = $this->request->control;
-        $action = $this->request->action;
+        $action  = $this->request->action;
 
         // 组装命名空间
         $pluginNameSpace = "plugin\\{$plugin}";
         $this->app->setNamespace($pluginNameSpace);
+        if (!is_dir($this->app->getRootPath() . 'plugin/' . $plugin)) {
+            throw new \Exception("插件不存在：{$plugin}");
+        }
 
         // 层级路由
         $levelRoute = '';
         if ($this->request->levelRoute) {
-            $levelRoute = str_replace("/","\\",$this->request->levelRoute);
+            $levelRoute = str_replace("/", "\\", $this->request->levelRoute);
             $levelRoute = "{$levelRoute}\\";
         }
 
         // 组装控制器命名空间
-        $controlLayout = config('route.controller_layer','controller');
-        $class = "{$pluginNameSpace}\\app\\{$levelRoute}{$controlLayout}\\{$control}";
+        $controlLayout = config('route.controller_layer', 'controller');
+        $class         = "{$pluginNameSpace}\\app\\{$levelRoute}{$controlLayout}\\{$control}";
         if (!class_exists($class)) {
             throw new \Exception("插件控制器不存在：{$class}");
         }
-        if (!method_exists($class,$action)) {
+        if (!method_exists($class, $action)) {
             throw new \Exception("插件方法不存在：{$class}@{$action}");
         }
 
-        // 获取实例类
-        $instance   = new $class($this->app);
-        $call       = [$instance, $action];
-        $vars       = [$this->request];
-
         // 执行调度转发
-        return call_user_func_array($call, $vars);
+        return app($class)->$action($this->request);
     }
 }

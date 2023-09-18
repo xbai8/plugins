@@ -51,6 +51,10 @@ class PluginMiddleware
      */
     public function handle($request, Closure $next)
     {
+        // 检测是否资源文件
+        if ($response = getAssetsCheck($request)) {
+            return $response;
+        }
         // 实例插件工具
         $pluginUtil       = new PluginsUtil($this->app);
         $this->pluginUtil = $pluginUtil;
@@ -58,11 +62,9 @@ class PluginMiddleware
         $this->pluginUtil->initPlugin();
         // 2.解析路由
         $this->parseRoute();
-        // 3.使用composer注册插件命名空间
-        $this->registerNamespace();
-        // 4.加载插件配置
+        // 3.加载插件配置
         $this->pluginUtil->loadConfig();
-        // 5.注册插件中间件
+        // 4.注册插件中间件
         $this->registerMiddlewares();
 
         // 调度转发
@@ -87,8 +89,10 @@ class PluginMiddleware
         $plugin   = $this->app->request->route('plugin', '');
         $pathinfo = $this->app->request->pathinfo();
         // 静态资源则拦截
-        if (pathinfo($pathinfo, PATHINFO_EXTENSION)) {
-            return;
+        if ($response = getAssetsCheck($this->app->request)) {
+            print_r($response);
+            exit;
+            return $response;
         }
         if (empty($plugin)) {
             throw new \Exception("插件名称不能为空");
@@ -133,30 +137,6 @@ class PluginMiddleware
         }
         $controlLayout = config('route.controller_layer', 'controller');
         $this->app->setNamespace("plugin\\{$plugin}\\app\\{$levelRoute}{$controlLayout}");
-    }
-
-    /**
-     * 使用composer注册插件命名空间
-     * @return void
-     * @author 贵州猿创科技有限公司
-     * @copyright 贵州猿创科技有限公司
-     * @email 416716328@qq.com
-     */
-    private function registerNamespace()
-    {
-        // 扫描插件目录并排除.和..
-        $data = array_diff(scandir($this->app->getRootPath() . 'plugin'), ['.', '..']);
-        // 实例命名空间类
-        $loader = require $this->app->getRootPath() . 'vendor/autoload.php';
-        // 绑定服务
-        $this->app->bind('rootLoader', $loader);
-        // 注册命名空间
-        foreach ($data as $pluginName) {
-            if (is_dir($this->app->getRootPath() . 'plugin/' . $pluginName)) {
-                $pluginPath = $this->app->getRootPath() . "plugin/{$pluginName}/";
-                $loader->setPsr4("plugin\\{$pluginName}\\", $pluginPath);
-            }
-        }
     }
 
     /**

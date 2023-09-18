@@ -137,3 +137,74 @@ if (!function_exists('getBetween')) {
         return $substr;
     }
 }
+if (!function_exists('getAssetsCheck')) {
+    /**
+     * 检测是否存在静态资源并处理
+     * @param support\Request $request
+     * @return bool|think\Response
+     * @author 贵州猿创科技有限公司
+     * @copyright 贵州猿创科技有限公司
+     * @email 416716328@qq.com
+     */
+    function getAssetsCheck(\think\Request $request)
+    {
+        $staticSuffix = config('plugins.static_suffix');
+        if (!is_array($staticSuffix)) {
+            throw new Exception("配置项plugins.static_suffix必须为数组");
+        }
+        if (empty($staticSuffix)) {
+            throw new Exception("配置项plugins.static_suffix不能为空");
+        }
+        // 检测是否资源文件
+        $extension = pathinfo($request->pathinfo(), PATHINFO_EXTENSION);
+        if (in_array($extension, $staticSuffix)) {
+            $mimeContentTypes = [
+                'xml' => 'application/xml,text/xml,application/x-xml',
+                'json' => 'application/json,text/x-json,application/jsonrequest,text/json',
+                'js' => 'text/javascript,application/javascript,application/x-javascript',
+                'css' => 'text/css',
+                'rss' => 'application/rss+xml',
+                'yaml' => 'application/x-yaml,text/yaml',
+                'atom' => 'application/atom+xml',
+                'pdf' => 'application/pdf',
+                'text' => 'text/plain',
+                'image' => 'image/png,image/jpg,image/jpeg,image/pjpeg,image/gif,image/webp,image/*',
+                'csv' => 'text/csv',
+                'html' => 'text/html,application/xhtml+xml,*/*',
+                'vue' => 'application/octet-stream',
+                'svg' => 'image/svg+xml',
+            ];
+            // 检测文件媒体类型
+            $mimeContentType = 'text/plain';
+            if (isset($mimeContentTypes[$extension])) {
+                $mimeContentType = $mimeContentTypes[$extension];
+            }
+            // 检测是否框架资源
+            $file = public_path().$request->pathinfo();
+            if (file_exists($file)) {
+                $content  = file_get_contents($file);
+                return response()->code(200)->contentType($mimeContentType)->content($content);
+            }
+            // 检测是否插件资源
+            $pluginRoute = explode('/',$request->pathinfo());
+            if (isset($pluginRoute[1])) {
+                $plugin = $pluginRoute[1];
+                unset($pluginRoute[0]);
+                unset($pluginRoute[1]);
+                $pluginRoute = implode('/', $pluginRoute);
+                $file = root_path()."plugin/{$plugin}/public/{$pluginRoute}";
+                if (file_exists($file)) {
+                    $content  = file_get_contents($file);
+                    return response()->code(200)->contentType($mimeContentType)->content($content);
+                }
+            }
+            // 插件文件资源不存在则找官方库
+            $file = root_path()."view/{$request->pathinfo()}";
+            if (file_exists($file)) {
+                $content  = file_get_contents($file);
+                return response()->code(200)->contentType($mimeContentType)->content($content);
+            }
+        }
+        return false;
+    }
+}
