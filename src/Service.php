@@ -28,11 +28,12 @@ class Service extends BaseService
         if (!is_dir($this->app->getRootPath() . 'plugin')) {
             mkdir($this->app->getRootPath() . 'plugin', 0755, true);
         }
+        
+        // 使用composer注册插件命名空间
+        $this->registerNamespace();
 
         // 监听服务
         $this->app->event->listen('HttpRun', function () use ($route) {
-            // 使用composer注册插件命名空间
-            $this->registerNamespace();
             // 注册插件路由
             $execute = '\\Xbai\\Plugins\\service\\RouteService@execute';
             $route->rule("app/:plugin", $execute)
