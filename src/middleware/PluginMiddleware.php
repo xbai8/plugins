@@ -64,7 +64,9 @@ class PluginMiddleware
         $this->parseRoute();
         // 3.加载插件配置
         $this->pluginUtil->loadConfig();
-        // 4.注册插件中间件
+        // 4.加载应用插件composer包
+        $this->pluginUtil->loadComposer();
+        // 5.注册插件中间件
         $this->registerMiddlewares();
 
         // 调度转发
