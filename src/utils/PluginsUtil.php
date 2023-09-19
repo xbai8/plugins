@@ -153,6 +153,6 @@ class PluginsUtil
             return;
         }
         // 加载插件内composer包
-        $pluginLoader = include_once $packageFile;
+        include_once $packageFile;
     }
 }
