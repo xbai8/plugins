@@ -81,17 +81,17 @@ class PluginsUtil
         // 插件目录
         $pluginPath     = $request->pluginPath;
         // 插件应用目录
-        $appPath        = $request->pluginAppPath;
+        $pluginAppPath        = $request->pluginAppPath;
         // 插件配置目录
         $configPath     = $request->pluginConfigPath;
 
         // 加载兼容函数库文件
-        if (is_file($pluginPath . '/functions.php')) {
-            include_once $pluginPath . '/functions.php';
+        if (is_file($pluginAppPath . '/functions.php')) {
+            include_once $pluginAppPath . '/functions.php';
         }
         // 加载TP类型函数库文件
-        if (is_file($pluginPath . '/common.php')) {
-            include_once $pluginPath . '/common.php';
+        if (is_file($pluginAppPath . '/common.php')) {
+            include_once $pluginAppPath . '/common.php';
         }
 
         $files = [];
