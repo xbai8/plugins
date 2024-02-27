@@ -104,9 +104,10 @@ class PluginMiddleware
         $this->app->request->plugin = $plugin;
         if($appid){
             # 设置Appid
-            $this->app->request->withHeader([
+            $header=$this->app->request->header();
+            $this->app->request->withHeader(array_merge($header, [
                 'Appid'=>(string)$appid
-            ]);
+            ]));
         }
         // 解析路由
         $pathinfo  = str_replace("app/{$plugin}", '', $pathinfo);
