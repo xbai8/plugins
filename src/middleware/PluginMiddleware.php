@@ -93,6 +93,7 @@ class PluginMiddleware
         $pathinfo = $this->app->request->pathinfo();
         // 静态资源则拦截
         if ($response = getAssetsCheck($this->app->request)) {
+            echo '2';die;
             print_r($response);
             exit;
             return $response;
@@ -102,12 +103,14 @@ class PluginMiddleware
         }
         // 设置插件名称
         $this->app->request->plugin = $plugin;
+        $this->app->request->appid = $this->app->request->header('appid');
         if($appid){
             # 设置Appid
             $header=$this->app->request->header();
             $this->app->request->withHeader(array_merge($header, [
                 'Appid'=>(string)$appid
             ]));
+            $this->app->request->appid = $appid;
         }
         // 解析路由
         $pathinfo  = str_replace("app/{$plugin}", '', $pathinfo);

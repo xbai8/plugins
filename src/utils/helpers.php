@@ -194,8 +194,18 @@ if (!function_exists('getAssetsCheck')) {
                 $pluginRoute = implode('/', $pluginRoute);
                 $file = root_path()."plugin/{$plugin}/public/{$pluginRoute}";
                 if (file_exists($file)) {
+                    $size= filesize($file);
+                    $header=[
+                        'Content-Type'      => $mimeContentType,
+                    ];
                     $content  = file_get_contents($file);
-                    return response()->code(200)->contentType($mimeContentType)->content($content);
+                    # 如果文件大于1M则使用Gzip压缩
+                    if($size>1024*1024){
+                        $header['Content-Encoding'] = 'gzip';
+                        $content  = gzencode($content,9);
+                    }else{
+                    }
+                    return response()->code(200)->header($header)->content($content);
                 }
             }
             # 文件资源不存在则找官方库

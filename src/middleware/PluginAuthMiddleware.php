@@ -18,9 +18,6 @@ use app\common\model\StorePluginsExpire;
 class PluginAuthMiddleware
 {
 
-    /** @var App */
-    protected $app;
-
     /**
      * 中间件构造函数
      * @param \think\App $app
